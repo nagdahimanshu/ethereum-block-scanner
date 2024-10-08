@@ -23,3 +23,8 @@ Not mandatory, but appreciated:
 	•	Bonus 1: Add a Mermaid diagram to illustrate your solution.
  
 	•	Bonus 2: Explain (no need to code) how you would handle edge cases like retry situations, block reorganization, how to not lose any txs in a 1h downtime scenario, and any other scenarios you want to showcase.
+
+## DOCS
+https://docs.blockdaemon.com/reference/how-to-access-solana-api
+https://docs.blockdaemon.com/reference/how-to-access-ethereum-api
+https://docs.blockdaemon.com/reference/how-to-access-bitcoin-api
