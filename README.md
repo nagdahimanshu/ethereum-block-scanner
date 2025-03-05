@@ -23,9 +23,12 @@ Not mandatory, but appreciated:
 Bonus 1: Add a Mermaid diagram to illustrate your solution. 
 Bonus 2: Explain (no need to code) how you would handle edge cases like retry situations, block reorganization, how to not lose any txs in a 1h downtime scenario, and any other scenarios you want to showcase.
 
-## Blockdaemon Docs
-https://docs.blockdaemon.com/reference/how-to-access-solana-api
+## RPC Docs
 
-https://docs.blockdaemon.com/reference/how-to-access-ethereum-api
+You can use any RPC provider you want. If you need an example or reference
 
-https://docs.blockdaemon.com/reference/how-to-access-bitcoin-api
+[RPC solana](https://docs.blockdaemon.com/reference/how-to-access-solana-api)
+
+[RPC ethereum](https://docs.blockdaemon.com/reference/how-to-access-ethereum-api)
+
+[RPC bitcoin](https://docs.blockdaemon.com/reference/how-to-access-bitcoin-api)
