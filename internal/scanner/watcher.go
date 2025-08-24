@@ -14,7 +14,6 @@ func (s *Scanner) Start() error {
 	}
 	s.subscription = sub
 
-	s.logger.Infof("Started Ethereum block scanner...")
 	go s.processHeaders()
 
 	return nil

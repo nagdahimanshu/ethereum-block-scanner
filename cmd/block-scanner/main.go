@@ -47,7 +47,11 @@ func main() {
 	}
 	defer w.Stop()
 
-	logger.Infof("Ethereum scanner started")
+	logger.Infow("Scanner started",
+		"node", cfg.EthereumNodeURL,
+		"batch_size", cfg.BatchSize,
+		"bloom_size", cfg.BloomFilterSize,
+	)
 
 	// Wait for shutdown signal
 	sigChan := make(chan os.Signal, 1)

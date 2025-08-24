@@ -59,7 +59,11 @@ func (s *Scanner) tryReconnect() {
 	for {
 		client, err := ethclient.Dial(s.nodeURL)
 		if err != nil {
-			s.logger.Infof("Failed to reconnect: %v. Retrying in 5 seconds...", err)
+			s.logger.Warnw("Failed to reconnect",
+				"error", err,
+				"retry_in", "5s",
+				"node", s.nodeURL,
+			)
 			time.Sleep(5 * time.Second)
 			continue
 		}

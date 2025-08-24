@@ -15,6 +15,11 @@ func (s *Scanner) processNewBlock(blockNumber uint64) {
 		return
 	}
 
+	s.logger.Infow("Processing block",
+		"block", blockNumber,
+		"hash", block.Hash().Hex(),
+	)
+
 	var addressesToCheck []string
 	for _, tx := range block.Transactions() {
 		from, err := s.getSenderAddress(tx)
