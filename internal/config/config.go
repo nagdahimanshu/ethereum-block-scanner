@@ -15,6 +15,7 @@ type Config struct {
 	BloomFilterHash   uint
 	BatchSize         int
 	CheckpointFile    string
+	LogLevel          string
 }
 
 func Load() *Config {

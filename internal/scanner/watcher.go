@@ -2,7 +2,6 @@ package scanner
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/nagdahimanshu/ethereum-block-scanner/internal/storage"
@@ -15,7 +14,7 @@ func (s *Scanner) Start() error {
 	}
 	s.subscription = sub
 
-	log.Println("Started Ethereum block scanner...")
+	s.logger.Infof("Started Ethereum block scanner...")
 	go s.processHeaders()
 
 	return nil
@@ -27,10 +26,10 @@ func (s *Scanner) Stop() {
 	}
 
 	if err := storage.WriteLastProcessedBlock(s.checkpointFile, s.lastBlock); err != nil {
-		log.Printf("Failed to save checkpoint: %v", err)
+		s.logger.Infof("Failed to save checkpoint: %v", err)
 	}
 
-	log.Println("Stopped Ethereum block scanner")
+	s.logger.Infof("Stopped Ethereum block scanner")
 }
 
 func (s *Scanner) processHeaders() {
@@ -39,12 +38,12 @@ func (s *Scanner) processHeaders() {
 		case <-s.ctx.Done():
 			return
 		case err := <-s.subscription.Err():
-			log.Printf("Subscription error: %v. Reconnecting...", err)
+			s.logger.Infof("Subscription error: %v. Reconnecting...", err)
 			time.Sleep(5 * time.Second)
 			s.tryReconnect()
 		case header := <-s.headersChan:
 			blockNumber := header.Number.Uint64()
-			log.Printf("New block arrived with number: %d", blockNumber)
+			s.logger.Infof("New block arrived with number: %d", blockNumber)
 			if blockNumber > s.lastBlock {
 				s.processNewBlock(blockNumber)
 				s.lastBlock = blockNumber
