@@ -22,8 +22,11 @@ func ReadAddresses(filename string) (map[string]string, error) {
 	}
 
 	startIndex := 0
-	if len(records) > 0 && strings.Contains(strings.ToLower(records[0][0]), "address") {
-		startIndex = 1
+	if len(records) > 0 {
+		firstRowLower := strings.ToLower(strings.Join(records[0], ","))
+		if strings.Contains(firstRowLower, "address") && strings.Contains(firstRowLower, "userid") {
+			startIndex = 1
+		}
 	}
 
 	for i := startIndex; i < len(records); i++ {

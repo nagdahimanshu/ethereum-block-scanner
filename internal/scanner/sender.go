@@ -7,7 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-func (s *Scanner) getSenderAddress(tx *types.Transaction) (string, error) {
+func GetSenderAddress(tx *types.Transaction) (string, error) {
 	if tx.ChainId().BitLen() > 0 {
 		if sender, err := types.Sender(types.LatestSignerForChainID(tx.ChainId()), tx); err == nil {
 			return strings.ToLower(sender.Hex()), nil

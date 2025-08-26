@@ -94,7 +94,8 @@ kafka-console-consumer --bootstrap-server localhost:9093 --topic ethereum-tx-eve
 ```
 2. When running with docker use:
 ```
-kafka-console-consumer --bootstrap-server kafka:9092 --topic ethereum-tx-events --from-beginning                                  
+docker exec -it kafka kafka-console-consumer --bootstrap-server kafka:9092 --topic ethereum-tx-events --from-beginning
+                                 
 ```
 
 **Notes**

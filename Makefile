@@ -44,7 +44,7 @@ docker-start: # Runs docker image
 .PHONY: docker-stop
 docker-stop: # Runs docker image
 	@echo "$(BLUE) Stopping and removing docker container $(BLOCK_SCANNER_APP_NAME)...$(COLOR_END)"
-	@docker-compose down
+	@docker-compose down -v
 
 lint: # Runs golangci-lint on the repo
 	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest

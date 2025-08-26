@@ -22,7 +22,7 @@ func (s *Scanner) processNewBlock(blockNumber uint64) {
 
 	var addressesToCheck []string
 	for _, tx := range block.Transactions() {
-		from, err := s.getSenderAddress(tx)
+		from, err := GetSenderAddress(tx)
 		if err == nil {
 			addressesToCheck = append(addressesToCheck, from)
 		}
@@ -48,7 +48,7 @@ func (s *Scanner) processTransactions(block *types.Block, addresses []string) {
 	}
 
 	for _, tx := range block.Transactions() {
-		from, err := s.getSenderAddress(tx)
+		from, err := GetSenderAddress(tx)
 		if err != nil {
 			continue
 		}
