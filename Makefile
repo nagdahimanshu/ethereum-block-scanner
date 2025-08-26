@@ -14,12 +14,48 @@ build: # Builds the application and create a binary at ./bin/
 	go build -a -o ./bin/$(BLOCK_SCANNER_APP_NAME) ./cmd/${BLOCK_SCANNER_APP_NAME}/...
 	@echo "$(GREEN)Binary successfully built$(COLOR_END)"
 
+.PHONY: docker-start-kafka
+docker-start-kafka: # Runs docker image
+	@echo "$(BLUE) Starting docker container $(BLOCK_SCANNER_APP_NAME)...$(COLOR_END)"
+	@docker-compose up -d kafka
+
+.PHONY: run-app
+run-app: docker-start-kafka # Runs application and wait for kafka
+	@echo "$(BLUE) Waiting for Kafka to be ready...$(COLOR_END)"
+	# Wait until Kafka port 9092 is open
+	@sleep 5 #
+	@while ! docker exec kafka sh -c "kafka-broker-api-versions --bootstrap-server kafka:9092" >/dev/null 2>&1; do \
+		echo "Waiting for Kafka to be ready..."; \
+		sleep 2; \
+	done
+	@echo "$(BLUE) Kafka is ready, starting application...$(COLOR_END)"
+	@./bin/${BLOCK_SCANNER_APP_NAME}
+
+.PHONY: docker-build
+docker-build: # Builds docker image
+	@echo "$(BLUE) Building docker image...$(COLOR_END)"
+	@docker build -t $(BLOCK_SCANNER_APP_NAME) .
+
+.PHONY: docker-start
+docker-start: # Runs docker image
+	@echo "$(BLUE) Starting docker container $(BLOCK_SCANNER_APP_NAME)...$(COLOR_END)"
+	@docker-compose up -d
+
+.PHONY: docker-stop
+docker-stop: # Runs docker image
+	@echo "$(BLUE) Stopping and removing docker container $(BLOCK_SCANNER_APP_NAME)...$(COLOR_END)"
+	@docker-compose down
+
 lint: # Runs golangci-lint on the repo
 	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	golangci-lint run --timeout 5m
 
 format: # Runs gofmt on the repo
 	gofmt -s -w .
+
+test: # Runs all the unit tests
+	@echo "Test packages"
+	go test -race -shuffle=on -coverprofile=coverage.out -cover $(PKGS)
 
 .PHONY: help
 help: # Show help for each of the Makefile recipes
