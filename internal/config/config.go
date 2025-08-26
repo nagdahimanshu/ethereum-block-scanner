@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -16,6 +17,8 @@ type Config struct {
 	BatchSize         int
 	CheckpointFile    string
 	LogLevel          string
+	KafkaBrokers      []string
+	KafkaTopic        string
 }
 
 func Load() *Config {
@@ -30,6 +33,8 @@ func Load() *Config {
 		BloomFilterHash:   getEnvAsUint("BLOOM_FILTER_HASH", 7),
 		BatchSize:         getEnvAsInt("BATCH_SIZE", 1000),
 		CheckpointFile:    getEnv("CHECKPOINT_FILE", "checkpoint.txt"),
+		KafkaBrokers:      getEnvAsSlice("KAFKA_BROKERS", []string{"localhost:9093"}, ","),
+		KafkaTopic:        getEnv("KAFKA_TOPIC", "ethereum-tx-events"),
 	}
 }
 
@@ -56,4 +61,15 @@ func getEnvAsUint(key string, defaultValue uint) uint {
 		}
 	}
 	return defaultValue
+}
+
+func getEnvAsSlice(key string, defaultVal []string, sep string) []string {
+	if val := os.Getenv(key); val != "" {
+		parts := strings.Split(val, sep)
+		for i := range parts {
+			parts[i] = strings.TrimSpace(parts[i])
+		}
+		return parts
+	}
+	return defaultVal
 }

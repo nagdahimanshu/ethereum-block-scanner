@@ -1,5 +1,5 @@
-// Package log implements logger
-package log
+// Package logger implements logger
+package logger
 
 import (
 	"go.uber.org/zap"

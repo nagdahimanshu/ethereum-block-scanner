@@ -11,8 +11,9 @@ import (
 
 	"github.com/nagdahimanshu/ethereum-block-scanner/internal/bloom"
 	"github.com/nagdahimanshu/ethereum-block-scanner/internal/config"
+	kafka "github.com/nagdahimanshu/ethereum-block-scanner/internal/events"
+	"github.com/nagdahimanshu/ethereum-block-scanner/internal/logger"
 	"github.com/nagdahimanshu/ethereum-block-scanner/internal/storage"
-	"github.com/nagdahimanshu/ethereum-block-scanner/log"
 )
 
 type Scanner struct {
@@ -26,10 +27,11 @@ type Scanner struct {
 	lastBlock      uint64
 	//nolint:typecheck
 	subscription ethereum.Subscription
-	logger       log.Logger
+	logger       logger.Logger
+	producer     *kafka.KafkaProducer
 }
 
-func New(ctx context.Context, cfg *config.Config, logger log.Logger, bloomFilter *bloom.AddressBloomFilter, addressMap map[string]string) (*Scanner, error) {
+func New(ctx context.Context, cfg *config.Config, logger logger.Logger, bloomFilter *bloom.AddressBloomFilter, addressMap map[string]string, producer *kafka.KafkaProducer) (*Scanner, error) {
 	client, err := ethclient.Dial(cfg.EthereumNodeURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to Ethereum node: %v", err)
@@ -37,7 +39,7 @@ func New(ctx context.Context, cfg *config.Config, logger log.Logger, bloomFilter
 
 	lastBlock, err := storage.ReadLastProcessedBlock(cfg.CheckpointFile)
 	if err != nil {
-		logger.Infof("Warning: Could not read checkpoint: %v", err)
+		logger.Infof("Could not read checkpoint: %v", err)
 	}
 
 	return &Scanner{
@@ -50,6 +52,7 @@ func New(ctx context.Context, cfg *config.Config, logger log.Logger, bloomFilter
 		checkpointFile: cfg.CheckpointFile,
 		lastBlock:      lastBlock,
 		logger:         logger,
+		producer:       producer,
 	}, nil
 }
 

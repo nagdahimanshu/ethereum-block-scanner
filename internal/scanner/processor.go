@@ -32,6 +32,8 @@ func (s *Scanner) processNewBlock(blockNumber uint64) {
 	}
 
 	potentialMatches := s.bloomFilter.BatchTest(addressesToCheck)
+	s.processTransactions(block, potentialMatches)
+
 	if len(potentialMatches) > 0 {
 		s.processTransactions(block, potentialMatches)
 	} else {
@@ -62,8 +64,24 @@ func (s *Scanner) processTransactions(block *types.Block, addresses []string) {
 			s.logTransaction(userID, fromStr, toStr, tx, block)
 		} else if userID, ok := s.addressMap[toStr]; ok && addressSet[toStr] {
 			s.logTransaction(userID, fromStr, toStr, tx, block)
+			s.publishTransaction(userID, fromStr, toStr, tx, block)
 		}
 	}
+}
+
+func (s *Scanner) publishTransaction(userID, from, to string, tx *types.Transaction, block *types.Block) {
+	event := map[string]interface{}{
+		"userId":      userID,
+		"from":        from,
+		"to":          to,
+		"amountWei":   tx.Value().String(),
+		"amountEth":   weiToEther(tx.Value()),
+		"hash":        tx.Hash().Hex(),
+		"blockNumber": block.Number().Uint64(),
+		"timestamp":   time.Unix(int64(block.Time()), 0).Format(time.RFC3339),
+	}
+
+	s.producer.PublishEvent(event)
 }
 
 func (s *Scanner) logTransaction(userID, from, to string, tx *types.Transaction, block *types.Block) {

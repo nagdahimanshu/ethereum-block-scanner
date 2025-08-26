@@ -5,6 +5,7 @@ checkpoint.txt
 
 # General
 .DS_Store
+coverage.out
 
 # Compilations
 bin
