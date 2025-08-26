@@ -16,9 +16,6 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     go build -o scanner ./cmd/block-scanner/main.go
 
-# ============================
-# Stage 2: Minimal final image
-# ============================
 FROM alpine:latest
 
 # Install CA certificates for HTTPS (needed by Ethereum RPC and Kafka)
