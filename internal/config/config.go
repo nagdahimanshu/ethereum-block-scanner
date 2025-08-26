@@ -14,11 +14,11 @@ type Config struct {
 	AddressesFilePath string
 	BloomFilterSize   uint
 	BloomFilterHash   uint
-	BatchSize         int
 	CheckpointFile    string
 	LogLevel          string
 	KafkaBrokers      []string
 	KafkaTopic        string
+	Port              string
 }
 
 func Load() *Config {
@@ -31,10 +31,10 @@ func Load() *Config {
 		AddressesFilePath: getEnv("ADDRESSES_FILE", "addresses.csv"),
 		BloomFilterSize:   getEnvAsUint("BLOOM_FILTER_SIZE", 10000000),
 		BloomFilterHash:   getEnvAsUint("BLOOM_FILTER_HASH", 7),
-		BatchSize:         getEnvAsInt("BATCH_SIZE", 1000),
 		CheckpointFile:    getEnv("CHECKPOINT_FILE", "checkpoint.txt"),
 		KafkaBrokers:      getEnvAsSlice("KAFKA_BROKERS", []string{"localhost:9093"}, ","),
 		KafkaTopic:        getEnv("KAFKA_TOPIC", "ethereum-tx-events"),
+		Port:              getEnv("PORT", "8080"),
 	}
 }
 

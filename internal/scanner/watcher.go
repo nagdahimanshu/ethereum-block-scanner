@@ -4,7 +4,14 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/nagdahimanshu/ethereum-block-scanner/internal/storage"
+)
+
+const (
+	Confirmations = 12  // Number of confirmations before processing a block to handle reorgs
+	NumWorkers    = 4   // Number of worker for transaction processing
+	JobQueueSize  = 100 // Bounded channel size for jobs
 )
 
 func (s *Scanner) Start() error {
@@ -31,7 +38,11 @@ func (s *Scanner) Stop() {
 	s.logger.Infof("Stopped Ethereum block scanner")
 }
 
+// processHeaders processes incoming Ethereum headers with safe confirmations
 func (s *Scanner) processHeaders() {
+	// Queue to hold incoming blocks until they have enough confirmations
+	blockQueue := make([]*types.Header, 0)
+
 	for {
 		select {
 		case <-s.ctx.Done():
@@ -41,11 +52,19 @@ func (s *Scanner) processHeaders() {
 			time.Sleep(5 * time.Second)
 			s.tryReconnect()
 		case header := <-s.headersChan:
-			blockNumber := header.Number.Uint64()
-			s.logger.Infof("New block arrived with number: %d", blockNumber)
-			if blockNumber > s.lastBlock {
-				s.processNewBlock(blockNumber)
-				s.lastBlock = blockNumber
+			blockQueue = append(blockQueue, header)
+			s.logger.Infof("Adding block to the queue")
+
+			// Process blocks that have enough confirmations
+			for len(blockQueue) > Confirmations {
+				toProcess := blockQueue[0]
+				blockQueue = blockQueue[1:]
+
+				blockNumber := toProcess.Number.Uint64()
+				if blockNumber > s.lastBlock {
+					s.processNewBlock(blockNumber)
+					s.lastBlock = blockNumber
+				}
 			}
 		}
 	}

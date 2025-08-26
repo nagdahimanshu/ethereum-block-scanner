@@ -19,12 +19,15 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
 FROM alpine:latest
 
 # Install CA certificates for HTTPS (needed by Ethereum RPC and Kafka)
-RUN apk --no-cache add ca-certificates
+RUN apk --no-cache add ca-certificates curl
 
 WORKDIR /app
 
 # Copy the binary from builder
 COPY --from=builder /app/scanner .
+
+# Expose both health and metrics ports
+EXPOSE 8080
 
 # Set the entrypoint to your scanner binary
 ENTRYPOINT ["./scanner"]

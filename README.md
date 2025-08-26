@@ -15,6 +15,8 @@ High performance Go microservice for real-time monitoring of Ethereum addresses 
     - [Using binary](#using-binary)
   - [Running with Docker](#running-with-docker)
   - [Subscribe to the transaction events from kafka](#subscribe-to-the-transaction-events-from-kafka)
+  - [Observability Guide](#observability-guide)
+    - [Health and Metrics Endpoints](#health-and-metrics-endpoints)
 
 ---
 
@@ -102,3 +104,14 @@ docker exec -it kafka kafka-console-consumer --bootstrap-server kafka:9092 --top
 1. .env file determines the configuration. Update Kafka brokers depending on whether you are running locally or inside Docker.
 2. You can mount addresses.csv and .env in Docker using volumes.
 3. Logs are printed to the console and events can be published to Kafka.
+
+## Observability Guide
+
+### Health and Metrics Endpoints
+The application provides observability through health checks and Prometheus metrics.
+
+| Endpoint   | Method | Description           | Response Example                   | Content-Type                |
+| ---------- | ------ | --------------------- | ---------------------------------- | --------------------------- |
+| `/health`  | GET    | Service health status | `200 OK` – `{"status": "healthy"}` | `application/json`          |
+| `/metrics` | GET    | Prometheus metrics    | `200 OK` – Prometheus metrics      | `text/plain; version=0.0.4` |
+

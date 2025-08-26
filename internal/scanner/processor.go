@@ -1,14 +1,65 @@
 package scanner
 
 import (
+	"fmt"
 	"math/big"
 	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/nagdahimanshu/ethereum-block-scanner/internal/metrics"
+	"go.uber.org/multierr"
 )
 
+// TxEvent represents a normalized blockchain transaction event
+type TxEvent struct {
+	UserID      string `json:"userId"`
+	From        string `json:"from"`
+	To          string `json:"to"`
+	AmountWei   string `json:"amountWei"`
+	AmountEth   string `json:"amountEth"`
+	Hash        string `json:"hash"`
+	BlockNumber uint64 `json:"blockNumber"`
+	Timestamp   string `json:"timestamp"`
+}
+
+// validateEvent checks transaction event
+func validateEvent(e TxEvent) error {
+	var validatorErr error
+
+	if e.UserID == "" {
+		validatorErr = multierr.Append(validatorErr, fmt.Errorf("userId is required"))
+	}
+	if e.From == "" {
+		validatorErr = multierr.Append(validatorErr, fmt.Errorf("from is required"))
+	}
+	if e.To == "" {
+		validatorErr = multierr.Append(validatorErr, fmt.Errorf("to is required"))
+	}
+	if e.AmountWei == "" {
+		validatorErr = multierr.Append(validatorErr, fmt.Errorf("amountWei is required"))
+	}
+	if e.AmountEth == "" {
+		validatorErr = multierr.Append(validatorErr, fmt.Errorf("amountEth is required"))
+	}
+	if e.Hash == "" {
+		validatorErr = multierr.Append(validatorErr, fmt.Errorf("hash is required"))
+	}
+	if e.BlockNumber == 0 {
+		validatorErr = multierr.Append(validatorErr, fmt.Errorf("blockNumber is required"))
+	}
+	if e.Timestamp == "" {
+		validatorErr = multierr.Append(validatorErr, fmt.Errorf("timestamp is required"))
+	}
+
+	return validatorErr
+}
+
+// processNewBlock processes all transactions in a block using worker pool
 func (s *Scanner) processNewBlock(blockNumber uint64) {
+	metrics.CurrentBlock.Set(float64(blockNumber))
+	metrics.BlocksProcessed.Inc()
+
 	block, err := s.client.BlockByNumber(s.ctx, big.NewInt(int64(blockNumber)))
 	if err != nil {
 		s.logger.Infof("Error getting block %d: %v", blockNumber, err)
@@ -19,6 +70,8 @@ func (s *Scanner) processNewBlock(blockNumber uint64) {
 		"block", blockNumber,
 		"hash", block.Hash().Hex(),
 	)
+
+	metrics.TransactionsProcessed.Add(float64(len(block.Transactions())))
 
 	var addressesToCheck []string
 	for _, tx := range block.Transactions() {
@@ -32,7 +85,6 @@ func (s *Scanner) processNewBlock(blockNumber uint64) {
 	}
 
 	potentialMatches := s.bloomFilter.BatchTest(addressesToCheck)
-	s.processTransactions(block, potentialMatches)
 
 	if len(potentialMatches) > 0 {
 		s.processTransactions(block, potentialMatches)
@@ -41,61 +93,94 @@ func (s *Scanner) processNewBlock(blockNumber uint64) {
 	}
 }
 
+// processTransactions uses a bounded worker pool to process transactions
 func (s *Scanner) processTransactions(block *types.Block, addresses []string) {
+	jobs := make(chan *types.Transaction, JobQueueSize)
+	done := make(chan bool)
+
+	// Start workers
+	for i := 0; i < NumWorkers; i++ {
+		go func() {
+			for tx := range jobs {
+				s.ProcessTransaction(tx, block, addresses)
+			}
+			done <- true
+		}()
+	}
+
+	// Add jobs into the queue
+	for _, tx := range block.Transactions() {
+		jobs <- tx
+	}
+	close(jobs)
+
+	// Wait for all workers to finish
+	for i := 0; i < NumWorkers; i++ {
+		<-done
+	}
+}
+
+func (s *Scanner) ProcessTransaction(tx *types.Transaction, block *types.Block, addresses []string) {
 	addressSet := make(map[string]bool)
 	for _, addr := range addresses {
 		addressSet[addr] = true
 	}
 
-	for _, tx := range block.Transactions() {
-		from, err := GetSenderAddress(tx)
-		if err != nil {
-			continue
-		}
-		to := tx.To()
-		if to == nil {
-			continue
-		}
+	from, err := GetSenderAddress(tx)
+	if err != nil {
+		return
+	}
+	to := tx.To()
+	if to == nil {
+		return
+	}
 
-		fromStr := strings.ToLower(from)
-		toStr := strings.ToLower(to.Hex())
+	fromStr := strings.ToLower(from)
+	toStr := strings.ToLower(to.Hex())
 
-		if userID, ok := s.addressMap[fromStr]; ok && addressSet[fromStr] {
-			s.logTransaction(userID, fromStr, toStr, tx, block)
-		} else if userID, ok := s.addressMap[toStr]; ok && addressSet[toStr] {
-			s.logTransaction(userID, fromStr, toStr, tx, block)
-			s.publishTransaction(userID, fromStr, toStr, tx, block)
-		}
+	// Check if sender or receiver is in our address map
+	if userID, ok := s.addressMap[fromStr]; ok && addressSet[fromStr] {
+		s.logTransaction(userID, fromStr, toStr, tx, block)
+		s.publishTransaction(userID, fromStr, toStr, tx, block)
+	} else if userID, ok := s.addressMap[toStr]; ok && addressSet[toStr] {
+		s.logTransaction(userID, fromStr, toStr, tx, block)
+		s.publishTransaction(userID, fromStr, toStr, tx, block)
 	}
 }
 
 func (s *Scanner) publishTransaction(userID, from, to string, tx *types.Transaction, block *types.Block) {
-	event := map[string]interface{}{
-		"userId":      userID,
-		"from":        from,
-		"to":          to,
-		"amountWei":   tx.Value().String(),
-		"amountEth":   weiToEther(tx.Value()),
-		"hash":        tx.Hash().Hex(),
-		"blockNumber": block.Number().Uint64(),
-		"timestamp":   time.Unix(int64(block.Time()), 0).Format(time.RFC3339),
+	event := TxEvent{
+		UserID:      userID,
+		From:        from,
+		To:          to,
+		AmountWei:   tx.Value().String(),
+		AmountEth:   weiToEther(tx.Value()),
+		Hash:        tx.Hash().Hex(),
+		BlockNumber: block.Number().Uint64(),
+		Timestamp:   time.Unix(int64(block.Time()), 0).Format(time.RFC3339),
+	}
+
+	if err := validateEvent(event); err != nil {
+		fmt.Errorf(err.Error())
 	}
 
 	s.producer.PublishEvent(event)
+	metrics.KafkaEventsPublished.Inc()
 }
 
 func (s *Scanner) logTransaction(userID, from, to string, tx *types.Transaction, block *types.Block) {
-	info := map[string]interface{}{
-		"userId":      userID,
-		"from":        from,
-		"to":          to,
-		"amountWei":   tx.Value().String(),
-		"amountEth":   weiToEther(tx.Value()),
-		"hash":        tx.Hash().Hex(),
-		"blockNumber": block.Number().Uint64(),
-		"timestamp":   time.Unix(int64(block.Time()), 0).Format(time.RFC3339),
+	event := TxEvent{
+		UserID:      userID,
+		From:        from,
+		To:          to,
+		AmountWei:   tx.Value().String(),
+		AmountEth:   weiToEther(tx.Value()),
+		Hash:        tx.Hash().Hex(),
+		BlockNumber: block.Number().Uint64(),
+		Timestamp:   time.Unix(int64(block.Time()), 0).Format(time.RFC3339),
 	}
-	s.logger.Infof("Transaction detected: %+v", info)
+
+	s.logger.Infof("Transaction detected: %+v", event)
 }
 
 func weiToEther(wei *big.Int) string {
