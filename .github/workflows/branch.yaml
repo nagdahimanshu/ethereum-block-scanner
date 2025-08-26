@@ -1,0 +1,34 @@
+name: "PR CI"
+
+on:
+  pull_request:
+    branches:
+      - '*'
+  push:
+    branches:
+      - '*'
+      
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup-go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.24"
+      - name: build
+        run: make build
+      - name: golangci-lint
+        run: make lint
+      - name: format
+        run: |
+          make format
+          if [ -z "$(git status --untracked-files=no --porcelain)" ]; then
+            echo "All files formatted"
+          else
+            echo "Running format is required"
+            exit 1
+          fi
+      - name: test
+        run: make test

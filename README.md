@@ -1,30 +1,104 @@
-# Backend Interview – Crypto
+# Ethereum Block Scanner
 
-## Mandatory task
+High performance Go microservice for real-time monitoring of Ethereum addresses using native JSON-RPC. 
 
-Given a list of 500,000 Ethereum addresses, each associated to a `userId`, create a microservice in Golang that monitors the Ethereum blockchain for any transactions involving those addresses. In summary, the service should:
+## Table of Contents
 
-1. Connect to the Ethereum blockchain via **native JSON-RPC methods** (e.g. using Alchemy, QuickNode, or any other free RPC provider).  
-   Do not use third-party APIs or indexing services — only the RPC methods exposed by Ethereum nodes.
-
-2. Detect all transactions that involve the specified addresses.  
-
-3. For the filtered transactions, output the following information:
-   - `userId`
-   - `from`
-   - `to`
-   - `amount`
-   - `hash`
-   - `blockNumber`
-
-The service should be designed for scalability, capable of processing blocks in real time. Assume you have 500,000 users (therefore 500,000 unique addresses).
-
-We value modular, simple, testable code. Showcase how testable it is by testing it :)
+- [Ethereum Block Scanner](#ethereum-block-scanner)
+  - [Table of Contents](#table-of-contents)
+  - [Prerequisites](#prerequisites)
+  - [Setup](#setup)
+    - [Environment Variables](#environment-variables)
+    - [Install Dependencies](#install-dependencies)
+  - [Running Locally](#running-locally)
+    - [With VS Code](#with-vs-code)
+    - [Using binary](#using-binary)
+  - [Running with Docker](#running-with-docker)
+  - [Subscribe to the transaction events from kafka](#subscribe-to-the-transaction-events-from-kafka)
 
 ---
 
-## Bonus task (not mandatory)
+## Prerequisites
 
-- Add a **Mermaid diagram** to illustrate your solution.  
-- Add **Kafka integration** to publish the output as events.  
-- Explain (no need to code) how you would handle edge cases such as retry situations, block reorganization, and how to not lose any transactions in a downtime scenario of the blockchain node.
+- Go `>= 1.24`
+- Docker & Docker Compose
+- Kafka
+
+---
+
+## Setup
+
+### Environment Variables
+
+Update a `.env` file available in the project root:
+
+```env
+ETH_NODE_URL=<WEBSOCKET_RPC_URL>
+ADDRESSES_FILE=addresses.csv
+BLOOM_FILTER_SIZE=10000000
+BLOOM_FILTER_HASH=7
+BATCH_SIZE=1000
+CHECKPOINT_FILE=checkpoint.txt
+KAFKA_BROKERS=kafka:9092
+KAFKA_TOPIC=ethereum-tx-events
+```
+
+### Install Dependencies
+```
+make install-deps
+```
+
+## Running Locally
+### With VS Code
+1. Open the project folder in VS Code.
+2. Ensure .env is updated with your local configuration.
+3. Build the binary:
+```
+make build
+```
+4. Launch application with VScode launch configuration
+
+### Using binary
+1. Build the binary:
+```
+make build
+```
+2. Run the binary
+   Build the binary:
+```
+make run-app
+```
+This will:
+- Start Kafka using Docker.
+- Wait for Kafka to be ready.
+- Launch the scanner binary.
+  
+## Running with Docker
+```
+make docker-build
+make docker-start
+```
+This will:
+- Build a Docker image for the scanner.
+- Start the scanner container with Kafka dependency.
+
+```
+make docker-stop
+```
+This stops all Docker containers and cleans up.
+
+## Subscribe to the transaction events from kafka
+1. When running locally use:
+```
+kafka-console-consumer --bootstrap-server localhost:9093 --topic ethereum-tx-events --from-beginning                                  
+```
+2. When running with docker use:
+```
+docker exec -it kafka kafka-console-consumer --bootstrap-server kafka:9092 --topic ethereum-tx-events --from-beginning
+                                 
+```
+
+**Notes**
+1. .env file determines the configuration. Update Kafka brokers depending on whether you are running locally or inside Docker.
+2. You can mount addresses.csv and .env in Docker using volumes.
+3. Logs are printed to the console and events can be published to Kafka.

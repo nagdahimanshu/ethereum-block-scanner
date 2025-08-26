@@ -1,0 +1,13 @@
+# Output files
+checkpoint.txt
+
+.idea/
+
+# General
+.DS_Store
+coverage.out
+
+# Compilations
+bin
+build
+generated
