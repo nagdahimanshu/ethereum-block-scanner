@@ -17,7 +17,7 @@ type KafkaProducer struct {
 }
 
 func NewProducer(ctx context.Context, logger logger.Logger, brokers []string, topic string) *KafkaProducer {
-	if err := createTopicifNotExists(brokers[0], topic, logger); err != nil {
+	if err := createTopicIfNotExists(brokers[0], topic, logger); err != nil {
 		logger.Errorf("Failed to create topic %s: %v", topic, err)
 	}
 
@@ -59,8 +59,8 @@ func (p *KafkaProducer) Close() error {
 	return p.writer.Close()
 }
 
-// createTopicifNotExists creates the topic if it doesn't exist
-func createTopicifNotExists(broker, topic string, log logger.Logger) error {
+// createTopicIfNotExists creates the topic if it doesn't exist
+func createTopicIfNotExists(broker, topic string, log logger.Logger) error {
 	conn, err := kafka.Dial("tcp", broker)
 	if err != nil {
 		return err

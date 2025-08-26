@@ -35,10 +35,10 @@ services:
       start_period: 60s
 
   ethereum-block-scanner:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: block-scanner:latest
     container_name: ethereum-block-scanner
+    ports:
+      - "8080:8080"
     depends_on:
       kafka:
         condition: service_healthy
@@ -47,6 +47,12 @@ services:
       - ./.env:/app/.env
     environment:
       KAFKA_BROKERS: kafka:9092
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 volumes:
   kafka-data:

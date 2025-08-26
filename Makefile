@@ -34,7 +34,7 @@ run-app: docker-start-kafka # Runs application and wait for kafka
 .PHONY: docker-build
 docker-build: # Builds docker image
 	@echo "$(BLUE) Building docker image...$(COLOR_END)"
-	@docker build -t $(BLOCK_SCANNER_APP_NAME) .
+	@docker build --no-cache -t $(BLOCK_SCANNER_APP_NAME) .
 
 .PHONY: docker-start
 docker-start: # Runs docker image

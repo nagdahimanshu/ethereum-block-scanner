@@ -11,6 +11,7 @@ import (
 	"github.com/nagdahimanshu/ethereum-block-scanner/internal/events"
 	"github.com/nagdahimanshu/ethereum-block-scanner/internal/logger"
 	"github.com/nagdahimanshu/ethereum-block-scanner/internal/scanner"
+	"github.com/nagdahimanshu/ethereum-block-scanner/internal/server"
 	"github.com/nagdahimanshu/ethereum-block-scanner/internal/storage"
 )
 
@@ -24,6 +25,10 @@ func main() {
 	if err != nil {
 		logger.Fatalf("Failed to create logger: %v", err)
 	}
+
+	// Initialize HTTP server
+	httpServer := server.NewServer(ctx, logger, cfg.Port)
+	go httpServer.Start(ctx)
 
 	// Load addresses
 	addressMap, err := storage.ReadAddresses(cfg.AddressesFilePath)
@@ -56,7 +61,6 @@ func main() {
 
 	logger.Infow("Scanner started",
 		"node", cfg.EthereumNodeURL,
-		"batch_size", cfg.BatchSize,
 		"bloom_size", cfg.BloomFilterSize,
 	)
 
