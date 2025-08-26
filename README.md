@@ -13,7 +13,8 @@ High performance Go microservice for real-time monitoring of Ethereum addresses 
   - [Running Locally](#running-locally)
     - [With VS Code](#with-vs-code)
     - [Using binary](#using-binary)
-    - [Running with Docker](#running-with-docker)
+  - [Running with Docker](#running-with-docker)
+  - [Subscribe to the transaction events from kafka](#subscribe-to-the-transaction-events-from-kafka)
 
 ---
 
@@ -72,7 +73,7 @@ This will:
 - Wait for Kafka to be ready.
 - Launch the scanner binary.
   
-### Running with Docker
+## Running with Docker
 ```
 make docker-build
 make docker-start
@@ -86,6 +87,15 @@ make docker-stop
 ```
 This stops all Docker containers and cleans up.
 
+## Subscribe to the transaction events from kafka
+1. When running locally use:
+```
+kafka-console-consumer --bootstrap-server localhost:9093 --topic ethereum-tx-events --from-beginning                                  
+```
+2. When running with docker use:
+```
+kafka-console-consumer --bootstrap-server kafka:9092 --topic ethereum-tx-events --from-beginning                                  
+```
 
 **Notes**
 1. .env file determines the configuration. Update Kafka brokers depending on whether you are running locally or inside Docker.

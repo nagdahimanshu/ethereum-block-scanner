@@ -37,7 +37,7 @@ func (s *Scanner) processNewBlock(blockNumber uint64) {
 	if len(potentialMatches) > 0 {
 		s.processTransactions(block, potentialMatches)
 	} else {
-		s.logger.Infof("No transactions detected from the list of addresses")
+		s.logger.Infof("No transactions detected from the list of addresses at block: %d", blockNumber)
 	}
 }
 
@@ -95,7 +95,7 @@ func (s *Scanner) logTransaction(userID, from, to string, tx *types.Transaction,
 		"blockNumber": block.Number().Uint64(),
 		"timestamp":   time.Unix(int64(block.Time()), 0).Format(time.RFC3339),
 	}
-	s.logger.Infof("TRANSACTION DETECTED: %+v", info)
+	s.logger.Infof("Transaction detected: %+v", info)
 }
 
 func weiToEther(wei *big.Int) string {
