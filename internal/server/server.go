@@ -58,12 +58,17 @@ func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
+	var err error
 	if s.health {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status": "healthy"}`))
+		_, err = w.Write([]byte(`{"status": "healthy"}`))
 	} else {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		w.Write([]byte(`{"status": "unhealthy"}`))
+		_, err = w.Write([]byte(`{"status": "unhealthy"}`))
+	}
+
+	if err != nil {
+		s.logger.Errorf("failed to write health response: %v", err)
 	}
 }
 
@@ -75,6 +80,8 @@ func (s *Server) SetHealth(health bool) {
 
 func (s *Server) Stop() {
 	if s.server != nil {
-		s.server.Shutdown(s.ctx)
+		if err := s.server.Shutdown(s.ctx); err != nil {
+			s.logger.Errorf("server shutdown error: %v", err)
+		}
 	}
 }

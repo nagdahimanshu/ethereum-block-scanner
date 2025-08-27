@@ -5,6 +5,7 @@ go 1.24.6
 require (
 	github.com/bits-and-blooms/bloom/v3 v3.7.0
 	github.com/ethereum/go-ethereum v1.16.2
+	github.com/gorilla/mux v1.8.1
 	github.com/joho/godotenv v1.5.1
 	github.com/prometheus/client_golang v1.23.0
 	github.com/segmentio/kafka-go v0.4.49
@@ -28,7 +29,6 @@ require (
 	github.com/ethereum/c-kzg-4844/v2 v2.1.0 // indirect
 	github.com/ethereum/go-verkle v0.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
-	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/holiman/uint256 v1.3.2 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect

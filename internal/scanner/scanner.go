@@ -16,6 +16,7 @@ import (
 	"github.com/nagdahimanshu/ethereum-block-scanner/internal/storage"
 )
 
+// Scanner is the main struct for Ethereum block scanning
 type Scanner struct {
 	client         *ethclient.Client
 	bloomFilter    *bloom.AddressBloomFilter
@@ -31,6 +32,7 @@ type Scanner struct {
 	producer     *kafka.KafkaProducer
 }
 
+// New initializes a new Scanner instance
 func New(ctx context.Context, cfg *config.Config, logger logger.Logger, bloomFilter *bloom.AddressBloomFilter, addressMap map[string]string, producer *kafka.KafkaProducer) (*Scanner, error) {
 	client, err := ethclient.Dial(cfg.EthereumNodeURL)
 	if err != nil {
@@ -56,6 +58,7 @@ func New(ctx context.Context, cfg *config.Config, logger logger.Logger, bloomFil
 	}, nil
 }
 
+// tryReconnect attempts to reconnect to the Ethereum node on connection failure
 func (s *Scanner) tryReconnect() {
 	s.Stop()
 

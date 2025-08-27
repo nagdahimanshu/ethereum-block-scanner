@@ -23,8 +23,8 @@ type TxEvent struct {
 	Timestamp   string `json:"timestamp"`
 }
 
-// validateEvent checks transaction event
-func validateEvent(e TxEvent) error {
+// ValidateEvent checks transaction event
+func ValidateEvent(e TxEvent) error {
 	var validatorErr error
 
 	if e.UserID == "" {
@@ -120,6 +120,9 @@ func (s *Scanner) processTransactions(block *types.Block, addresses []string) {
 	}
 }
 
+// ProcessTransaction processes a single transaction
+// Checks if sender or receiver is in monitored addresses
+// Logs and publishes events if a match is found
 func (s *Scanner) ProcessTransaction(tx *types.Transaction, block *types.Block, addresses []string) {
 	addressSet := make(map[string]bool)
 	for _, addr := range addresses {
@@ -148,20 +151,21 @@ func (s *Scanner) ProcessTransaction(tx *types.Transaction, block *types.Block, 
 	}
 }
 
+// publishTransaction constructs a TxEvent, validates it and publishes to Kafka
 func (s *Scanner) publishTransaction(userID, from, to string, tx *types.Transaction, block *types.Block) {
 	event := TxEvent{
 		UserID:      userID,
 		From:        from,
 		To:          to,
 		AmountWei:   tx.Value().String(),
-		AmountEth:   weiToEther(tx.Value()),
+		AmountEth:   WeiToEther(tx.Value()),
 		Hash:        tx.Hash().Hex(),
 		BlockNumber: block.Number().Uint64(),
 		Timestamp:   time.Unix(int64(block.Time()), 0).Format(time.RFC3339),
 	}
 
-	if err := validateEvent(event); err != nil {
-		fmt.Errorf(err.Error())
+	if err := ValidateEvent(event); err != nil {
+		s.logger.Errorf("Invalid transaction event: ", err)
 	}
 
 	s.producer.PublishEvent(event)
@@ -174,7 +178,7 @@ func (s *Scanner) logTransaction(userID, from, to string, tx *types.Transaction,
 		From:        from,
 		To:          to,
 		AmountWei:   tx.Value().String(),
-		AmountEth:   weiToEther(tx.Value()),
+		AmountEth:   WeiToEther(tx.Value()),
 		Hash:        tx.Hash().Hex(),
 		BlockNumber: block.Number().Uint64(),
 		Timestamp:   time.Unix(int64(block.Time()), 0).Format(time.RFC3339),
@@ -183,7 +187,8 @@ func (s *Scanner) logTransaction(userID, from, to string, tx *types.Transaction,
 	s.logger.Infof("Transaction detected: %+v", event)
 }
 
-func weiToEther(wei *big.Int) string {
+// WeiToEther converts wei amount to Ether
+func WeiToEther(wei *big.Int) string {
 	eth := new(big.Float).SetInt(wei)
 	eth.Quo(eth, big.NewFloat(1e18))
 	return eth.Text('f', 8)

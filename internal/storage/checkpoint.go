@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// ReadLastProcessedBlock reads the last processed block number from a checkpoint file
 func ReadLastProcessedBlock(filename string) (uint64, error) {
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		return 0, nil

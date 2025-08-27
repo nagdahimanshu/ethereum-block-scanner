@@ -9,6 +9,7 @@ import (
 	kafka "github.com/segmentio/kafka-go"
 )
 
+// KafkaProducer wraps a kafka.Writer and provides a simple interface to publish events
 type KafkaProducer struct {
 	writer *kafka.Writer
 	topic  string
@@ -16,6 +17,7 @@ type KafkaProducer struct {
 	ctx    context.Context
 }
 
+// NewProducer creates a new KafkaProducer instance
 func NewProducer(ctx context.Context, logger logger.Logger, brokers []string, topic string) *KafkaProducer {
 	if err := createTopicIfNotExists(brokers[0], topic, logger); err != nil {
 		logger.Errorf("Failed to create topic %s: %v", topic, err)
@@ -36,6 +38,7 @@ func NewProducer(ctx context.Context, logger logger.Logger, brokers []string, to
 	}
 }
 
+// PublishEvent publishes a event to Kafka
 func (p *KafkaProducer) PublishEvent(event interface{}) {
 	data, err := json.Marshal(event)
 	if err != nil {
@@ -55,6 +58,7 @@ func (p *KafkaProducer) PublishEvent(event interface{}) {
 	}
 }
 
+// Close closes the Kafka writer
 func (p *KafkaProducer) Close() error {
 	return p.writer.Close()
 }

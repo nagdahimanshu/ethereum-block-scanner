@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// ReadAddresses reads a CSV file containing user IDs and Ethereum addresses
 func ReadAddresses(filename string) (map[string]string, error) {
 	file, err := os.Open(filename)
 	if err != nil {
